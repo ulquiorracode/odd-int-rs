@@ -126,6 +126,14 @@ mod tests {
         assert_eq!(size_of::<I64>(), 8);
         assert_eq!(size_of::<U128>(), 16);
         assert_eq!(size_of::<I128>(), 16);
+        assert_eq!(size_of::<U256>(), 32);
+        assert_eq!(size_of::<I256>(), 32);
+        assert_eq!(size_of::<U512>(), 64);
+        assert_eq!(size_of::<I512>(), 64);
+        assert_eq!(size_of::<U1024>(), 128);
+        assert_eq!(size_of::<I1024>(), 128);
+        assert_eq!(size_of::<U4096>(), 512);
+        assert_eq!(size_of::<I4096>(), 512);
         assert_eq!(size_of::<U17>(), 3);
         assert_eq!(size_of::<I17>(), 3);
         assert_eq!(size_of::<U33>(), 5);
