@@ -1,0 +1,36 @@
+[package]
+name = "odd-int"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Ulquiorra <contact@ulquiorra.dev>"]
+license = "MIT OR Apache-2.0"
+description = "Arbitrary bit-width integer types with exact byte footprint, zero heap allocations, and no_std support"
+repository = "https://github.com/ulquiorracode/odd-int-rs"
+homepage = "https://github.com/ulquiorracode/odd-int-rs"
+readme = "README.md"
+keywords = ["integer", "bit-width", "no-std", "zero-copy", "binary-format"]
+categories = ["data-structures", "no-std", "encoding", "embedded"]
+
+[dependencies]
+serde = { version = "1.0", default-features = false, optional = true }
+zerocopy = { version = "0.8", default-features = false, features = ["derive"], optional = true }
+
+[dev-dependencies]
+criterion = "0.8"
+
+[features]
+default = []
+std = []
+serde = ["dep:serde"]
+zerocopy = ["dep:zerocopy"]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
