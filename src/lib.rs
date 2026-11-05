@@ -14,13 +14,15 @@
 extern crate std;
 
 pub mod error;
+pub mod int;
 pub mod ops;
 pub mod uint;
 
 pub use error::OutOfRangeError;
+pub use int::Int;
 pub use uint::UInt;
 
-// Ergonomic type aliases for all standard odd bit-widths with computed byte sizes:
+// Ergonomic unsigned type aliases for all standard odd bit-widths:
 pub type U1 = UInt<1, 1>;
 pub type U2 = UInt<2, 1>;
 pub type U3 = UInt<3, 1>;
@@ -47,6 +49,16 @@ pub type U48 = UInt<48, 6>;
 pub type U56 = UInt<56, 7>;
 pub type U64 = UInt<64, 8>;
 pub type U128 = UInt<128, 16>;
+
+// Ergonomic signed type aliases:
+pub type I8 = Int<8, 1>;
+pub type I16 = Int<16, 2>;
+pub type I24 = Int<24, 3>;
+pub type I32 = Int<32, 4>;
+pub type I40 = Int<40, 5>;
+pub type I48 = Int<48, 6>;
+pub type I56 = Int<56, 7>;
+pub type I64 = Int<64, 8>;
 
 #[cfg(test)]
 mod tests {
@@ -128,5 +140,37 @@ mod tests {
         let five = U11::from_u64(5).unwrap();
         let six = U11::from_u64(6).unwrap();
         assert_eq!(five.checked_add(six).unwrap().to_u64(), 11);
+    }
+
+    #[test]
+    fn test_signed_int_exact_sizes_and_sign_extension() {
+        assert_eq!(size_of::<I8>(), 1);
+        assert_eq!(size_of::<I16>(), 2);
+        assert_eq!(size_of::<I24>(), 3);
+        assert_eq!(size_of::<I32>(), 4);
+        assert_eq!(size_of::<I40>(), 5);
+        assert_eq!(size_of::<I48>(), 6);
+        assert_eq!(size_of::<I64>(), 8);
+
+        // Sign extension for I24: range [-8_388_608, 8_388_607]
+        let neg_one = I24::from_i64(-1).unwrap();
+        assert_eq!(neg_one.to_i64(), -1);
+        assert_eq!(neg_one.to_isize(), -1);
+        assert_eq!(neg_one.to_le_bytes(), [0xFF, 0xFF, 0xFF]);
+
+        let min_i24 = I24::from_i64(-8_388_608).unwrap();
+        assert_eq!(min_i24.to_i64(), -8_388_608);
+
+        let max_i24 = I24::from_i64(8_388_607).unwrap();
+        assert_eq!(max_i24.to_i64(), 8_388_607);
+
+        // Bounds checks
+        assert!(I24::from_i64(-8_388_609).is_err());
+        assert!(I24::from_i64(8_388_608).is_err());
+
+        // Negative small value
+        let neg_42 = I24::from_i64(-42).unwrap();
+        assert_eq!(neg_42.to_i64(), -42);
+        assert_eq!(neg_42.to_isize(), -42);
     }
 }
