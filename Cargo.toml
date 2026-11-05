@@ -13,6 +13,7 @@ keywords = ["integer", "bit-width", "no-std", "zero-copy", "binary-format"]
 categories = ["data-structures", "no-std", "encoding", "embedded"]
 
 [dependencies]
+paste = "1.0"
 serde = { version = "1.0", default-features = false, optional = true }
 zerocopy = { version = "0.8", default-features = false, features = ["derive"], optional = true }
 

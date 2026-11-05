@@ -13,52 +13,16 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod aliases;
 pub mod error;
 pub mod int;
 pub mod ops;
 pub mod uint;
 
+pub use aliases::*;
 pub use error::OutOfRangeError;
 pub use int::Int;
 pub use uint::UInt;
-
-// Ergonomic unsigned type aliases for all standard odd bit-widths:
-pub type U1 = UInt<1, 1>;
-pub type U2 = UInt<2, 1>;
-pub type U3 = UInt<3, 1>;
-pub type U4 = UInt<4, 1>;
-pub type U5 = UInt<5, 1>;
-pub type U6 = UInt<6, 1>;
-pub type U7 = UInt<7, 1>;
-pub type U8 = UInt<8, 1>;
-
-pub type U9 = UInt<9, 2>;
-pub type U10 = UInt<10, 2>;
-pub type U11 = UInt<11, 2>;
-pub type U12 = UInt<12, 2>;
-pub type U13 = UInt<13, 2>;
-pub type U14 = UInt<14, 2>;
-pub type U15 = UInt<15, 2>;
-pub type U16 = UInt<16, 2>;
-
-pub type U17 = UInt<17, 3>;
-pub type U24 = UInt<24, 3>;
-pub type U32 = UInt<32, 4>;
-pub type U40 = UInt<40, 5>;
-pub type U48 = UInt<48, 6>;
-pub type U56 = UInt<56, 7>;
-pub type U64 = UInt<64, 8>;
-pub type U128 = UInt<128, 16>;
-
-// Ergonomic signed type aliases:
-pub type I8 = Int<8, 1>;
-pub type I16 = Int<16, 2>;
-pub type I24 = Int<24, 3>;
-pub type I32 = Int<32, 4>;
-pub type I40 = Int<40, 5>;
-pub type I48 = Int<48, 6>;
-pub type I56 = Int<56, 7>;
-pub type I64 = Int<64, 8>;
 
 #[cfg(test)]
 mod tests {
@@ -112,6 +76,15 @@ mod tests {
         assert_eq!(max_u24.to_u64(), 0xFF_FFFF);
         assert!(U24::from_u64(0xFF_FFFF).is_ok());
         assert_eq!(U24::from_u64(0x100_0000), Err(OutOfRangeError::new(24)));
+
+        // U48: range 0..=281_474_976_710_655
+        let max_u48 = U48::MAX;
+        assert_eq!(max_u48.to_u64(), 0xFFFF_FFFF_FFFF);
+        assert!(U48::from_u64(0xFFFF_FFFF_FFFF).is_ok());
+        assert_eq!(
+            U48::from_u64(0x1_0000_0000_0000),
+            Err(OutOfRangeError::new(48))
+        );
     }
 
     #[test]
@@ -151,6 +124,14 @@ mod tests {
         assert_eq!(size_of::<I40>(), 5);
         assert_eq!(size_of::<I48>(), 6);
         assert_eq!(size_of::<I64>(), 8);
+        assert_eq!(size_of::<U128>(), 16);
+        assert_eq!(size_of::<I128>(), 16);
+        assert_eq!(size_of::<U17>(), 3);
+        assert_eq!(size_of::<I17>(), 3);
+        assert_eq!(size_of::<U33>(), 5);
+        assert_eq!(size_of::<I33>(), 5);
+        assert_eq!(size_of::<uint_t!(47)>(), 6);
+        assert_eq!(size_of::<int_t!(47)>(), 6);
 
         // Sign extension for I24: range [-8_388_608, 8_388_607]
         let neg_one = I24::from_i64(-1).unwrap();
