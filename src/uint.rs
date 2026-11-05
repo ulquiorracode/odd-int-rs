@@ -13,6 +13,15 @@ use core::fmt;
 ///   in the most significant byte are strictly guaranteed to be zero.
 #[repr(C, packed)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(
+    feature = "zerocopy",
+    derive(
+        zerocopy::FromBytes,
+        zerocopy::IntoBytes,
+        zerocopy::KnownLayout,
+        zerocopy::Immutable
+    )
+)]
 pub struct UInt<const BITS: usize, const BYTES: usize> {
     pub(crate) raw: [u8; BYTES],
 }

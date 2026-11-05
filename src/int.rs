@@ -12,6 +12,15 @@ use core::fmt;
 /// - Little-endian byte order with two's complement sign-extension.
 #[repr(C, packed)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(
+    feature = "zerocopy",
+    derive(
+        zerocopy::FromBytes,
+        zerocopy::IntoBytes,
+        zerocopy::KnownLayout,
+        zerocopy::Immutable
+    )
+)]
 pub struct Int<const BITS: usize, const BYTES: usize> {
     pub(crate) raw: [u8; BYTES],
 }
