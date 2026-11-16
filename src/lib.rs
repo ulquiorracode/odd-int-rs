@@ -162,4 +162,69 @@ mod tests {
         assert_eq!(neg_42.to_i64(), -42);
         assert_eq!(neg_42.to_isize(), -42);
     }
+
+    #[test]
+    fn test_ord_and_partial_ord_correctness() {
+        let u16_256 = UInt::<16, 2>::from_u64(256).unwrap();
+        let u16_1 = UInt::<16, 2>::from_u64(1).unwrap();
+        assert!(u16_256 > u16_1);
+        assert!(u16_1 < u16_256);
+
+        let i24_neg1 = I24::from_i64(-1).unwrap();
+        let i24_zero = I24::from_i64(0).unwrap();
+        let i24_pos1 = I24::from_i64(1).unwrap();
+        let i24_min = I24::MIN;
+        let i24_max = I24::MAX;
+
+        assert!(i24_min < i24_neg1);
+        assert!(i24_neg1 < i24_zero);
+        assert!(i24_zero < i24_pos1);
+        assert!(i24_pos1 < i24_max);
+    }
+
+    #[test]
+    fn test_from_i64_sign_extension_large_bytes() {
+        let neg_one = Int::<128, 16>::from_i64(-1).unwrap();
+        assert_eq!(neg_one.to_le_bytes(), [0xFFu8; 16]);
+        assert_eq!(neg_one.to_i128(), -1);
+        assert!(neg_one.is_negative());
+
+        let pos_one = Int::<128, 16>::from_i64(1).unwrap();
+        let mut expected = [0u8; 16];
+        expected[0] = 1;
+        assert_eq!(pos_one.to_le_bytes(), expected);
+        assert_eq!(pos_one.to_i128(), 1);
+        assert!(!pos_one.is_negative());
+    }
+
+    #[test]
+    fn test_shift_overflow_guard_bytes_larger_than_needed() {
+        let u8_16 = UInt::<8, 16>::from_u64(250).unwrap();
+        assert_eq!(u8_16.to_u64(), 250);
+        let u8_16_max = UInt::<8, 16>::MAX;
+        assert_eq!(u8_16_max.to_u64(), 255);
+        assert_eq!(
+            u8_16.checked_add(UInt::<8, 16>::from_u64(10).unwrap()),
+            None
+        );
+
+        let i8_16 = Int::<8, 16>::from_i64(-5).unwrap();
+        assert_eq!(i8_16.to_i64(), -5);
+        assert!(i8_16.is_negative());
+    }
+
+    #[test]
+    fn test_canonical_domain_validation_from_le_bytes() {
+        // U11 requires unused top 5 bits of high byte to be zero
+        assert!(UInt::<11, 2>::from_le_bytes([0xFF, 0x07]).is_ok());
+        assert!(UInt::<11, 2>::from_le_bytes([0xFF, 0xFF]).is_err());
+
+        // I11 requires unused top 5 bits to match sign
+        // +100: sign bit is 0, high bits must be 0
+        let pos = Int::<11, 2>::from_i64(100).unwrap();
+        assert!(Int::<11, 2>::from_le_bytes(pos.to_le_bytes()).is_ok());
+        // -100: sign bit is 1, high bits must be 1
+        let neg = Int::<11, 2>::from_i64(-100).unwrap();
+        assert!(Int::<11, 2>::from_le_bytes(neg.to_le_bytes()).is_ok());
+    }
 }
