@@ -227,4 +227,28 @@ mod tests {
         let neg = Int::<11, 2>::from_i64(-100).unwrap();
         assert!(Int::<11, 2>::from_le_bytes(neg.to_le_bytes()).is_ok());
     }
+
+    #[test]
+    fn test_large_int_arithmetic_and_hex() {
+        // Int > 128 bits arithmetic
+        let a = Int::<200, 25>::from_i64(1).unwrap();
+        let b = Int::<200, 25>::from_i64(2).unwrap();
+        let c = a.checked_add(b).expect("checked_add > 128 bits failed");
+        assert_eq!(c.raw[0], 3);
+        assert!(!c.is_negative());
+
+        // Subtraction
+        let diff = a.checked_sub(b).expect("checked_sub failed");
+        assert_eq!(diff.raw[0], 0xFF);
+        assert!(diff.is_negative());
+
+        // Hex formatting
+        #[cfg(feature = "std")]
+        {
+            use std::format;
+            let i8_neg = Int::<8, 1>::from_i64(-1).unwrap();
+            assert_eq!(format!("{:x}", i8_neg), "ff");
+            assert_eq!(format!("{:X}", i8_neg), "FF");
+        }
+    }
 }

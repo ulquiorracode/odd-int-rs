@@ -348,33 +348,49 @@ impl<const BITS: usize, const BYTES: usize> fmt::Binary for Int<BITS, BYTES> {
 
 impl<const BITS: usize, const BYTES: usize> fmt::LowerHex for Int<BITS, BYTES> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if BITS <= 64 {
-            fmt::LowerHex::fmt(&self.to_i64(), f)
-        } else if BITS <= 128 {
-            fmt::LowerHex::fmt(&self.to_i128(), f)
-        } else {
-            let raw = self.raw;
-            for b in raw.iter().rev() {
-                write!(f, "{:02x}", b)?;
+        let msb_index = (BITS - 1) / 8;
+        let mut buf = [0u8; 1024];
+        let mut cursor = 0;
+        let hex_chars = b"0123456789abcdef";
+        for i in (0..=msb_index).rev() {
+            let b = self.raw[i];
+            let byte_val = if i == msb_index && BITS % 8 != 0 {
+                b & Self::HIGH_BYTE_MASK
+            } else {
+                b
+            };
+            if cursor + 2 <= buf.len() {
+                buf[cursor] = hex_chars[(byte_val >> 4) as usize];
+                buf[cursor + 1] = hex_chars[(byte_val & 0x0F) as usize];
+                cursor += 2;
             }
-            Ok(())
         }
+        let s = core::str::from_utf8(&buf[..cursor]).unwrap_or("");
+        f.pad_integral(true, "", s)
     }
 }
 
 impl<const BITS: usize, const BYTES: usize> fmt::UpperHex for Int<BITS, BYTES> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if BITS <= 64 {
-            fmt::UpperHex::fmt(&self.to_i64(), f)
-        } else if BITS <= 128 {
-            fmt::UpperHex::fmt(&self.to_i128(), f)
-        } else {
-            let raw = self.raw;
-            for b in raw.iter().rev() {
-                write!(f, "{:02X}", b)?;
+        let msb_index = (BITS - 1) / 8;
+        let mut buf = [0u8; 1024];
+        let mut cursor = 0;
+        let hex_chars = b"0123456789ABCDEF";
+        for i in (0..=msb_index).rev() {
+            let b = self.raw[i];
+            let byte_val = if i == msb_index && BITS % 8 != 0 {
+                b & Self::HIGH_BYTE_MASK
+            } else {
+                b
+            };
+            if cursor + 2 <= buf.len() {
+                buf[cursor] = hex_chars[(byte_val >> 4) as usize];
+                buf[cursor + 1] = hex_chars[(byte_val & 0x0F) as usize];
+                cursor += 2;
             }
-            Ok(())
         }
+        let s = core::str::from_utf8(&buf[..cursor]).unwrap_or("");
+        f.pad_integral(true, "", s)
     }
 }
 
