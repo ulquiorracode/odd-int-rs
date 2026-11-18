@@ -255,7 +255,41 @@ impl<const BITS: usize, const BYTES: usize> Int<BITS, BYTES> {
             let res = self.to_i128().checked_add(rhs.to_i128())?;
             Self::from_i128(res).ok()
         } else {
-            None
+            let msb_index = (BITS - 1) / 8;
+            let mut raw = [0u8; BYTES];
+            let mut carry = 0u16;
+            let mut i = 0;
+            while i <= msb_index {
+                let sum = (self.raw[i] as u16) + (rhs.raw[i] as u16) + carry;
+                raw[i] = sum as u8;
+                carry = sum >> 8;
+                i += 1;
+            }
+
+            let a_neg = self.is_negative();
+            let b_neg = rhs.is_negative();
+            let res_neg = (raw[msb_index] & Self::SIGN_BIT_MASK) != 0;
+
+            // Two's complement overflow: positive + positive = negative OR negative + negative = positive
+            if (a_neg == b_neg) && (a_neg != res_neg) {
+                return None;
+            }
+
+            // Sign extend into unused high bits of msb byte and subsequent padding bytes
+            if BITS % 8 != 0 {
+                if res_neg {
+                    raw[msb_index] |= !Self::HIGH_BYTE_MASK;
+                } else {
+                    raw[msb_index] &= Self::HIGH_BYTE_MASK;
+                }
+            }
+            let mut j = msb_index + 1;
+            while j < BYTES {
+                raw[j] = if res_neg { 0xFF } else { 0x00 };
+                j += 1;
+            }
+
+            Some(Self { raw })
         }
     }
 
@@ -269,7 +303,45 @@ impl<const BITS: usize, const BYTES: usize> Int<BITS, BYTES> {
             let res = self.to_i128().checked_sub(rhs.to_i128())?;
             Self::from_i128(res).ok()
         } else {
-            None
+            let msb_index = (BITS - 1) / 8;
+            let mut raw = [0u8; BYTES];
+            let mut borrow = 0i16;
+            let mut i = 0;
+            while i <= msb_index {
+                let diff = (self.raw[i] as i16) - (rhs.raw[i] as i16) - borrow;
+                if diff < 0 {
+                    raw[i] = (diff + 256) as u8;
+                    borrow = 1;
+                } else {
+                    raw[i] = diff as u8;
+                    borrow = 0;
+                }
+                i += 1;
+            }
+
+            let a_neg = self.is_negative();
+            let b_neg = rhs.is_negative();
+            let res_neg = (raw[msb_index] & Self::SIGN_BIT_MASK) != 0;
+
+            // Overflow in subtraction: a - b where signs differ and result has opposite sign of a
+            if (a_neg != b_neg) && (a_neg != res_neg) {
+                return None;
+            }
+
+            if BITS % 8 != 0 {
+                if res_neg {
+                    raw[msb_index] |= !Self::HIGH_BYTE_MASK;
+                } else {
+                    raw[msb_index] &= Self::HIGH_BYTE_MASK;
+                }
+            }
+            let mut j = msb_index + 1;
+            while j < BYTES {
+                raw[j] = if res_neg { 0xFF } else { 0x00 };
+                j += 1;
+            }
+
+            Some(Self { raw })
         }
     }
 
